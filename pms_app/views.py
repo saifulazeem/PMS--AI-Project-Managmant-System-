@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User, TeamMember, Project, Task, Comment, Notification
 from .serializers import (
-    RegisterSerializer, LoginSerializer, UserSerializer,TeamMemberSerializer, ProjectSerializer, ProjectListSerializer,TaskSerializer,TaskListSerializer, CommentSerializer
+    RegisterSerializer, LoginSerializer, UserSerializer,TeamMemberSerializer, ProjectSerializer, ProjectListSerializer,TaskSerializer,TaskListSerializer, CommentSerializer, NotificationSerializer
 )
 
 

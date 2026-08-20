@@ -17,7 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from pms_app.views import RegisterView,LoginView,LogoutView,MeView,UserDetailView,UserListView,TeamMemberListCreateView,TeamMemberDetailView,ProjectListCreateView, ProjectDetailView, ProjectTasksView, TaskListCreateView, TaskDetailView, TaskCommentsView, CommentListCreateView, CommentDetailView, CommentPinView
+from pms_app.views import RegisterView,LoginView,LogoutView,MeView,UserDetailView,UserListView,TeamMemberListCreateView,TeamMemberDetailView,ProjectListCreateView, ProjectDetailView, ProjectTasksView, TaskListCreateView, TaskDetailView, TaskCommentsView, CommentListCreateView, CommentDetailView, CommentPinView, NotificationListView, NotificationDetailView, NotificationMarkReadView, NotificationDeleteView, NotificationMarkAllReadView
+
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -46,6 +47,16 @@ urlpatterns = [
     path('api/comments', CommentListCreateView.as_view(), name='CommentListCreateView'),
     path('api/comments/<c_id>', CommentDetailView.as_view(), name='CommentDetailView'),
     path('api/comments/<c_id>/pin', CommentPinView.as_view(), name='CommentPinView'),
+
+    path('api/notifications', NotificationListView.as_view(), name='NotificationListView'),
+    path('api/notifications/<n_id>', NotificationDetailView.as_view(), name='NotificationDetailView'),
+    path('api/notifications/<n_id>/read', NotificationMarkReadView.as_view(), name='NotificationMarkReadView'),
+
+    path('api/notifications/del/<n_id>', NotificationDeleteView.as_view(), name='NotificationDeleteView'),
+    path('api/notifications/<n_id>/read-all', NotificationMarkAllReadView.as_view(), name='NotificationMarkAllReadView'),
+
+
+    
 
 
     
