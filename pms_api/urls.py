@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from pms_app.views import RegisterView,LoginView,LogoutView,MeView,UserDetailView,UserListView,TeamMemberListCreateView,TeamMemberDetailView,ProjectListCreateView, ProjectDetailView, ProjectTasksView, TaskListCreateView, TaskDetailView
+from pms_app.views import RegisterView,LoginView,LogoutView,MeView,UserDetailView,UserListView,TeamMemberListCreateView,TeamMemberDetailView,ProjectListCreateView, ProjectDetailView, ProjectTasksView, TaskListCreateView, TaskDetailView, TaskCommentsView, CommentListCreateView, CommentDetailView, CommentPinView
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -36,11 +36,16 @@ urlpatterns = [
     path('api/users/<id>', UserDetailView.as_view(), name='Single_User'),
     path('api/team_members', TeamMemberListCreateView.as_view(), name='team_member_list_CR'),
     path('api/team_members/<id>', TeamMemberDetailView.as_view(), name='team_memebr_details_view_UD'),
-
     path('api/projects', ProjectListCreateView.as_view(), name='project_list_CR'),
     path('api/projects/<p_id>', ProjectDetailView.as_view(), name='project_details_view_UD'),
+    path('api/projects/<p_id>/tasks', ProjectTasksView.as_view(), name='ProjectTasksView'),
     path('api/task', TaskListCreateView.as_view(), name='Create Task View'),
     path('api/task/<t_id>', TaskDetailView.as_view(), name='TaskDetailView'),
+    path('api/tasks/<t_id>/comments', TaskCommentsView.as_view(), name='TaskCommentsView'),
+
+    path('api/comments', CommentListCreateView.as_view(), name='CommentListCreateView'),
+    path('api/comments/<c_id>', CommentDetailView.as_view(), name='CommentDetailView'),
+    path('api/comments/<c_id>/pin', CommentPinView.as_view(), name='CommentPinView'),
 
 
     

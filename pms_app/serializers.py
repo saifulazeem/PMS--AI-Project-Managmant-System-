@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, TeamMember, Project, Task
+from .models import User, TeamMember, Project, Task, Comment, Notification
 
 from rest_framework import serializers
 from django.contrib.auth import authenticate
@@ -128,4 +128,33 @@ class TaskListSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Task
         fields = ["t_id", "title", "status", "priority", "due_date", "assign_to_name"]
+
+# ─────────────────────────────────────────────
+# Comment Serializers
+# ─────────────────────────────────────────────
+
+class CommentSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source="u.u_name", read_only=True)
+
+    class Meta:
+        model  = Comment
+        fields = ["c_id", "t", "u", "user_name", "desc", "created_at",
+                  "updated_at", "priority", "pin"]
+        read_only_fields = ["c_id", "u", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        validated_data["u"] = self.context["request"].user
+        return super().create(validated_data)
+
+
+# ─────────────────────────────────────────────
+# Notification Serializers
+# ─────────────────────────────────────────────
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Notification
+        fields = ["n_id", "u", "type", "message", "is_read",
+                  "read_at", "created_at", "is_deleted"]
+        read_only_fields = ["n_id", "u", "read_at", "created_at"]
 

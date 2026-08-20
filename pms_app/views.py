@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import User, TeamMember, Project, Task
+from .models import User, TeamMember, Project, Task, Comment, Notification
 from .serializers import (
-    RegisterSerializer, LoginSerializer, UserSerializer,TeamMemberSerializer, ProjectSerializer, ProjectListSerializer,TaskSerializer,TaskListSerializer
+    RegisterSerializer, LoginSerializer, UserSerializer,TeamMemberSerializer, ProjectSerializer, ProjectListSerializer,TaskSerializer,TaskListSerializer, CommentSerializer
 )
 
 
@@ -322,4 +322,142 @@ class TaskCommentsView(APIView):
     def get(self, request, t_id):
         comments = Comment.objects.filter(t__t_id=t_id).order_by("-created_at")
         return success(CommentSerializer(comments, many=True).data)
+
+# ═══════════════════════════════════════════════════════════════
+# COMMENT VIEWS
+# ═══════════════════════════════════════════════════════════════
+
+class CommentListCreateView(APIView):
+    """GET /api/comments/   POST /api/comments/"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        comments = Comment.objects.all().order_by("-created_at")
+        return success(CommentSerializer(comments, many=True).data)
+
+    def post(self, request):
+        serializer = CommentSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            comment = serializer.save()
+            return success(CommentSerializer(comment).data, status.HTTP_201_CREATED)
+        return error(serializer.errors)
+
+
+class CommentDetailView(APIView):
+    """GET / PATCH / DELETE /api/comments/<c_id>/"""
+    permission_classes = [IsAuthenticated]
+
+    def _get_comment(self, c_id):
+        try:
+            return Comment.objects.get(c_id=c_id)
+        except Comment.DoesNotExist:
+            return None
+
+    def get(self, request, c_id):
+        comment = self._get_comment(c_id)
+        if not comment:
+            return error("Comment not found.", status.HTTP_404_NOT_FOUND)
+        return success(CommentSerializer(comment).data)
+
+    def patch(self, request, c_id):
+        comment = self._get_comment(c_id)
+        if not comment:
+            return error("Comment not found.", status.HTTP_404_NOT_FOUND)
+        if comment.u != request.user:
+            return error("You can only edit your own comments.", status.HTTP_403_FORBIDDEN)
+        serializer = CommentSerializer(comment, data=request.data, partial=True,
+                                       context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return success(serializer.data)
+        return error(serializer.errors)
+
+    def delete(self, request, c_id):
+        comment = self._get_comment(c_id)
+        if not comment:
+            return error("Comment not found.", status.HTTP_404_NOT_FOUND)
+        if comment.u != request.user:
+            return error("You can only delete your own comments.", status.HTTP_403_FORBIDDEN)
+        comment.delete()
+        return success({"message": "Comment deleted."})
+
+
+class CommentPinView(APIView):
+    """PATCH /api/comments/<c_id>/pin/  — toggle pin"""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, c_id):
+        try:
+            comment = Comment.objects.get(c_id=c_id)
+        except Comment.DoesNotExist:
+            return error("Comment not found.", status.HTTP_404_NOT_FOUND)
+        comment.pin = not comment.pin
+        comment.save()
+        return success({"pinned": comment.pin})
+
+
+# ═══════════════════════════════════════════════════════════════
+# NOTIFICATION VIEWS
+# ═══════════════════════════════════════════════════════════════
+
+class NotificationListView(APIView):
+    """GET /api/notifications/  — current user's notifications"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(
+            u=request.user, is_deleted__isnull=True
+        ).order_by("-created_at")
+        return success(NotificationSerializer(notifications, many=True).data)
+
+
+class NotificationDetailView(APIView):
+    """GET /api/notifications/<n_id>/"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, n_id):
+        try:
+            notification = Notification.objects.get(n_id=n_id, u=request.user)
+        except Notification.DoesNotExist:
+            return error("Notification not found.", status.HTTP_404_NOT_FOUND)
+        return success(NotificationSerializer(notification).data)
+
+
+class NotificationMarkReadView(APIView):
+    """PATCH /api/notifications/<n_id>/read/"""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, n_id):
+        try:
+            notification = Notification.objects.get(n_id=n_id, u=request.user)
+        except Notification.DoesNotExist:
+            return error("Notification not found.", status.HTTP_404_NOT_FOUND)
+        notification.mark_as_read()
+        return success({"message": "Notification marked as read."})
+
+
+class NotificationMarkAllReadView(APIView):
+    """PATCH /api/notifications/read-all/"""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        now = timezone.now()
+        Notification.objects.filter(
+            u=request.user, is_read=False
+        ).update(is_read=True, read_at=now)
+        return success({"message": "All notifications marked as read."})
+
+
+class NotificationDeleteView(APIView):
+    """DELETE /api/notifications/<n_id>/"""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, n_id):
+        try:
+            notification = Notification.objects.get(n_id=n_id, u=request.user)
+        except Notification.DoesNotExist:
+            return error("Notification not found.", status.HTTP_404_NOT_FOUND)
+        notification.is_deleted = timezone.now()
+        notification.save()
+        return success({"message": "Notification deleted."})
 

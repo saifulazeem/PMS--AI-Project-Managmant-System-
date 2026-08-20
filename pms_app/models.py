@@ -234,3 +234,83 @@ class Task(models.Model):
         self.is_deleted = True
         self.save()
 
+# ─────────────────────────────────────────────
+# Comments
+# ─────────────────────────────────────────────
+
+class Comment(models.Model):
+    """
+    Comment on a task. Maps to 'Comments' in the ERD.
+    t_id → Task, u_id → User.
+    """
+    PRIORITY_CHOICES = [
+        ("low", "Low"),
+        ("normal", "Normal"),
+        ("high", "High"),
+    ]
+
+    c_id       = models.AutoField(primary_key=True)
+    t          = models.ForeignKey(
+                     Task,
+                     on_delete=models.CASCADE,
+                     related_name="comments",
+                     db_column="t_id"
+                 )
+    u          = models.ForeignKey(
+                     User,
+                     on_delete=models.SET_NULL,
+                     null=True,
+                     related_name="comments",
+                     db_column="u_id"
+                 )
+    desc       = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    priority   = models.CharField(max_length=50, choices=PRIORITY_CHOICES, default="normal")
+    pin        = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "comments"
+        verbose_name = "Comment"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Comment by {self.u} on Task {self.t_id}"
+
+
+# ─────────────────────────────────────────────
+# Notifications
+# ─────────────────────────────────────────────
+
+class Notification(models.Model):
+    """
+    Notification entity. Maps to 'Notifications' in the ERD.
+    u_id → User (the recipient).
+    """
+    n_id       = models.AutoField(primary_key=True)
+    u          = models.ForeignKey(
+                     User,
+                     on_delete=models.CASCADE,
+                     related_name="notifications",
+                     db_column="u_id"
+                 )
+    type       = models.CharField(max_length=100)
+    message    = models.TextField()
+    is_read    = models.BooleanField(default=False)
+    read_at    = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.DateTimeField(null=True, blank=True)  # ERD specifies datetime
+
+    class Meta:
+        db_table = "notifications"
+        verbose_name = "Notification"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Notification({self.type}) → {self.u}"
+
+    def mark_as_read(self):
+        from django.utils import timezone
+        self.is_read = True
+        self.read_at = timezone.now()
+        self.save()
